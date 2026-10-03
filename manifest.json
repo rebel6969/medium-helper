@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Medium Helper",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Unlocks Medium paywalls and improves reading experience",
+  "minimum_chrome_version": "111",
   "content_scripts": [
     {
       "matches": [
@@ -13,12 +14,24 @@
       ],
       "js": ["content.js"],
       "run_at": "document_start",
+      "all_frames": false,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "*://*.medium.com/*",
+        "*://*.uxplanet.org/*",
+        "*://uxplanet.org/*",
+        "*://medium.com/*"
+      ],
+      "js": ["bridge.js"],
+      "run_at": "document_start",
       "all_frames": false
     }
   ],
   "permissions": [
-    "scripting",
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "host_permissions": [
     "*://*.medium.com/*",

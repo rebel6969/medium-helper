@@ -1,10 +1,29 @@
 (function() {
     'use strict';
     
-    const DEBUG = true;
+    // Off unless switched on from the popup. This script runs in the page's world,
+    // without chrome.* APIs, so bridge.js relays the stored setting as a DOM event.
+    // Messages logged before it arrives are held, then printed or dropped.
+    let debug = null;
+    const pending = [];
+
+    function setDebug(on) {
+        if (debug === null && on) {
+            for (const [message, data] of pending) {
+                console.log('[Medium Helper]', message, data || '');
+            }
+        }
+        pending.length = 0;
+        debug = on;
+    }
+
+    document.addEventListener('medium-helper:debug-on', () => setDebug(true));
+    document.addEventListener('medium-helper:debug-off', () => setDebug(false));
     
     function log(message, data) {
-        if (DEBUG) {
+        if (debug === null) {
+            if (pending.length < 50) pending.push([message, data]);
+        } else if (debug) {
             console.log('[Medium Helper]', message, data || '');
         }
     }
@@ -44,10 +63,11 @@
     }
     
     window.fetch = async function(...args) {
-        const url = args[0];
+        const input = args[0];
+        const url = input instanceof Request ? input.url : String(input);
         const response = await OriginalFetch.apply(this, args);
         
-        if (typeof url === 'string' && url.includes('/graphql') && response.clone) {
+        if (url.includes('/graphql') && response.clone) {
             const clonedResponse = response.clone();
             try {
                 const contentType = response.headers.get('content-type');
